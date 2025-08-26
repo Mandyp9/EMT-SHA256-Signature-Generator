@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SHA-256 Signature Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+            margin: 0; padding: 0; min-height: 100vh;
+        }
+        h1 { text-align: center; margin: 40px 0 20px; font-size: 2.4rem; color: #861616; }
+        .container {
+            width: 95%; max-width: 1200px; margin: 0 auto 50px;
+            background: #fff; padding: 30px 40px; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
+        label { font-weight: 600; margin-bottom: 6px; display: block; color: #333; }
+        input, select, textarea {
+            width: 100%; padding: 14px 15px; font-size: 15px; border-radius: 12px; border: 1px solid #ccc; outline: none; transition: all 0.3s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #861616; box-shadow: 0 0 10px rgba(134,22,22,0.2); }
+        button {
+            display: block; margin: 30px auto 0; padding: 14px 32px; font-size: 16px; font-weight: 600;
+            border: none; border-radius: 12px; cursor: pointer; background: linear-gradient(135deg, #861616, #c62828); color: white; transition: all 0.3s ease;
+        }
+        button:hover { background: linear-gradient(135deg, #c62828, #861616); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .result { background: #f5f5f5; padding: 25px; margin-top: 30px; border-radius: 15px; border: 1px solid #ddd; }
+        .copy-container { display: flex; align-items: center; gap: 10px; }
+        .copy-icon { width: 24px; height: 24px; cursor: pointer; transition: transform 0.2s, opacity 0.2s; }
+        .copy-icon:hover { transform: scale(1.2); opacity: 0.8; }
+        textarea { font-family: monospace; font-size: 14px; resize: none; height: 80px; border-radius: 12px; padding: 14px; }
+        @media(max-width: 600px){ .form-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <h1>SHA-256 Signature Generator</h1>
+
+    <div class="container">
+        <label for="api">Choose API:</label>
+        <select id="api">
+            <option value="">Select API</option>
+            <option value="Send Transaction">Send Transaction</option>
+        </select>
+
+        <div class="form-grid" id="fields-container">
+            <!-- Dynamic fields will appear here -->
+        </div>
+
+        <button id="generateBtn">Generate Signature</button>
+
+        <div class="result" id="resultContainer" style="display:none;">
+            <h3>Concatenated String:</h3>
+            <textarea id="concatenated" readonly></textarea>
+
+            <h3>SHA-256 Signature:</h3>
+            <div class="copy-container">
+                <textarea id="signatureText" readonly></textarea>
+                <img src="https://img.icons8.com/ios-filled/50/000000/copy.png" alt="Copy" class="copy-icon" onclick="copySignature()">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiFields = {
+            "Choose the API": [],
+    "Send Transaction": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID", "LOCATION_ID",
+        "SENDER_FIRST_NAME", "SENDER_MIDDLE_NAME", "SENDER_LAST_NAME", "SENDER_GENDER",
+        "SENDER_ADDRESS", "SENDER_CITY", "SENDER_COUNTRY", "SENDER_ID_TYPE",
+        "SENDER_ID_NUMBER", "SENDER_ID_ISSUE_DATE", "SENDER_ID_EXPIRE_DATE",
+        "SENDER_DATE_OF_BIRTH", "SENDER_MOBILE", "SOURCE_OF_FUND", "SENDER_OCCUPATION",
+        "SENDER_NATIONALITY", "RECEIVER_FIRST_NAME", "RECEIVER_MIDDLE_NAME",
+        "RECEIVER_LAST_NAME", "RECEIVER_ADDRESS", "RECEIVER_CITY", "RECEIVER_COUNTRY",
+        "RECEIVER_CONTACT_NUMBER", "RELATIONSHIP_TO_BENEFICIARY", "PAYMENT_MODE",
+        "BANK_ID", "BANK_NAME", "BANK_BRANCH_NAME", "BANK_ACCOUNT_NUMBER", "WALLET_ID",
+        "CALC_BY", "TRANSFER_AMOUNT", "OURSERVICE_CHARGE", "TRANSACTION_EXCHANGERATE",
+        "SETTLEMENT_DOLLARRATE", "PURPOSE_OF_REMITTANCE", "ADDITIONAL_FIELD1",
+        "ADDITIONAL_FIELD2", "AUTHORIZED_REQUIRED", "API_PASSWORD"
+    ],
+    "Account Validation": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "PAYMENT_MODE", "BankCode",
+        "AccountNumber", "AccountName", "API_PASSWORD"
+    ],
+    "Get Exchange Rate": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "TRANSFER_AMOUNT", "PAYMENT_MODE",
+        "CALC_BY","LOCATION_ID","PAYOUT_COUNTRY", "API_PASSWORD"
+    ],
+    "SSF Validation": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "PAYMENT_MODE", "BankCode",
+        "PSSID", "API_PASSWORD"
+    ],
+    "Wallet Validation": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "WalletId", "AccountName",
+        "TransferAmount", "API_PASSWORD"
+    ],
+    "Fonepay Validation": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "PAYMENT_MODE", "BankCode", "MobileNumber", "API_PASSWORD"
+    ],
+    "Ammendment Request": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "PINNO", "AMENDMENT_FIELD",
+        "AMENDMENT_VALUE", "API_PASSWORD"
+    ],
+    "Authorized Confirmed": [
+        "AGENT_CODE", "USER_ID", "PINNO", "AGENT_SESSION_ID", "API_PASSWORD"
+    ],
+    "Cancel Transaction": [
+        "AGENT_CODE", "USER_ID", "PINNO",  "AGENT_SESSION_ID", "CANCEL_REASON", "API_PASSWORD"
+    ],
+    "Get Current Balance": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "API_PASSWORD"
+    ],
+    "Query Txn Status": [
+        "AGENT_CODE", "USER_ID", "PINNO",  "AGENT_SESSION_ID", "AGENT_TXNID", "API_PASSWORD"
+    ]
+        };
+
+        const apiSelect = document.getElementById("api");
+        const fieldsContainer = document.getElementById("fields-container");
+        const generateBtn = document.getElementById("generateBtn");
+        const resultContainer = document.getElementById("resultContainer");
+        const concatenatedEl = document.getElementById("concatenated");
+        const signatureEl = document.getElementById("signatureText");
+
+        apiSelect.addEventListener("change", () => {
+            const api = apiSelect.value;
+            fieldsContainer.innerHTML = "";
+            if(apiFields[api]){
+                apiFields[api].forEach(field => {
+                    const div = document.createElement("div");
+                    div.innerHTML = `<label>${field}</label><input type="text" id="${field}" />`;
+                    fieldsContainer.appendChild(div);
+                });
+            }
+        });
+
+        generateBtn.addEventListener("click", async () => {
+            const api = apiSelect.value;
+            if(!api) { alert("Select an API first"); return; }
+
+            const data = { api };
+            apiFields[api].forEach(field => {
+                data[field] = document.getElementById(field).value;
+            });
+
+            try {
+                const response = await fetch("https://emt-sha256-signature-generator.onrender.com/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if(result.success){
+                    concatenatedEl.value = result.concatenated;
+                    signatureEl.value = result.signature;
+                    resultContainer.style.display = "block";
+                } else {
+                    alert(result.message);
+                }
+            } catch(err){
+                alert("Error connecting to API: " + err);
+            }
+        });
+
+        function copySignature(){
+            signatureEl.select();
+            signatureEl.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(signatureEl.value);
+            alert("Signature copied!");
+        }
+    </script>
+</body>
+</html>
