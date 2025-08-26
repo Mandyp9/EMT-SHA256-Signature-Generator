@@ -1,184 +1,189 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>SHA-256 Signature Generator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
-            margin: 0; padding: 0; min-height: 100vh;
-        }
-        h1 { text-align: center; margin: 40px 0 20px; font-size: 2.4rem; color: #861616; }
-        .container {
-            width: 95%; max-width: 1200px; margin: 0 auto 50px;
-            background: #fff; padding: 30px 40px; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-        }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
-        label { font-weight: 600; margin-bottom: 6px; display: block; color: #333; }
-        input, select, textarea {
-            width: 100%; padding: 14px 15px; font-size: 15px; border-radius: 12px; border: 1px solid #ccc; outline: none; transition: all 0.3s;
-        }
-        input:focus, select:focus, textarea:focus { border-color: #861616; box-shadow: 0 0 10px rgba(134,22,22,0.2); }
-        button {
-            display: block; margin: 30px auto 0; padding: 14px 32px; font-size: 16px; font-weight: 600;
-            border: none; border-radius: 12px; cursor: pointer; background: linear-gradient(135deg, #861616, #c62828); color: white; transition: all 0.3s ease;
-        }
-        button:hover { background: linear-gradient(135deg, #c62828, #861616); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
-        .result { background: #f5f5f5; padding: 25px; margin-top: 30px; border-radius: 15px; border: 1px solid #ddd; }
-        .copy-container { display: flex; align-items: center; gap: 10px; }
-        .copy-icon { width: 24px; height: 24px; cursor: pointer; transition: transform 0.2s, opacity 0.2s; }
-        .copy-icon:hover { transform: scale(1.2); opacity: 0.8; }
-        textarea { font-family: monospace; font-size: 14px; resize: none; height: 80px; border-radius: 12px; padding: 14px; }
-        @media(max-width: 600px){ .form-grid { grid-template-columns: 1fr; } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Signature Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f4f6f8;
+    }
+    h2 {
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    select, input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    .fields-container {
+      margin-top: 20px;
+    }
+    .field {
+      margin-bottom: 15px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #007bff;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #signature {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e9ecef;
+      border-radius: 5px;
+      font-family: monospace;
+    }
+  </style>
 </head>
 <body>
-    <h1>SHA-256 Signature Generator</h1>
 
-    <div class="container">
-        <label for="api">Choose API:</label>
-        <select id="api">
-            <option value="">Select API</option>
-            <option value="Send Transaction">Send Transaction</option>
-            <option value="Account Validation">Account Validation</option>
-            <option value="Get Exchange Rate">Get Exchange Rate</option>
-            <option value="SSF Validation">SSF Validation</option>
-            <option value="Wallet Validation">Wallet Validation</option>
-            <option value="Fonepay Validation">Fonepay Validation</option>
-            <option value="Ammendment Request">Ammendment Request</option>
-            <option value="Authorized Confirmed">Authorized Confirmed</option>
-            <option value="Cancel Transaction">Cancel Transaction</option>
-            <option value="Get Current Balance">Get Current Balance</option>
-            <option value="Query Txn Status">Query Txn Status</option>
-        </select>
+  <h2>API Signature Generator</h2>
 
-        <div class="form-grid" id="fields-container">
-            <!-- Dynamic fields will appear here -->
-        </div>
+  <!-- API Dropdown -->
+  <label for="api">Choose API:</label>
+  <select id="api"></select>
 
-        <button id="generateBtn">Generate Signature</button>
+  <!-- Dynamic fields will appear here -->
+  <div class="fields-container" id="fields"></div>
 
-        <div class="result" id="resultContainer" style="display:none;">
-            <h3>Concatenated String:</h3>
-            <textarea id="concatenated" readonly></textarea>
+  <button onclick="generateSignature()">Generate Signature</button>
 
-            <h3>SHA-256 Signature:</h3>
-            <div class="copy-container">
-                <textarea id="signatureText" readonly></textarea>
-                <img src="https://img.icons8.com/ios-filled/50/000000/copy.png" alt="Copy" class="copy-icon" onclick="copySignature()">
-            </div>
-        </div>
-    </div>
+  <!-- Signature result -->
+  <div id="signature"></div>
 
-    <script>
-        const apiFields = {
-            "Choose the API": [],
-    "Send Transaction": [
-        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID", "LOCATION_ID",
-        "SENDER_FIRST_NAME", "SENDER_MIDDLE_NAME", "SENDER_LAST_NAME", "SENDER_GENDER",
-        "SENDER_ADDRESS", "SENDER_CITY", "SENDER_COUNTRY", "SENDER_ID_TYPE",
-        "SENDER_ID_NUMBER", "SENDER_ID_ISSUE_DATE", "SENDER_ID_EXPIRE_DATE",
-        "SENDER_DATE_OF_BIRTH", "SENDER_MOBILE", "SOURCE_OF_FUND", "SENDER_OCCUPATION",
-        "SENDER_NATIONALITY", "RECEIVER_FIRST_NAME", "RECEIVER_MIDDLE_NAME",
-        "RECEIVER_LAST_NAME", "RECEIVER_ADDRESS", "RECEIVER_CITY", "RECEIVER_COUNTRY",
-        "RECEIVER_CONTACT_NUMBER", "RELATIONSHIP_TO_BENEFICIARY", "PAYMENT_MODE",
-        "BANK_ID", "BANK_NAME", "BANK_BRANCH_NAME", "BANK_ACCOUNT_NUMBER", "WALLET_ID",
-        "CALC_BY", "TRANSFER_AMOUNT", "OURSERVICE_CHARGE", "TRANSACTION_EXCHANGERATE",
-        "SETTLEMENT_DOLLARRATE", "PURPOSE_OF_REMITTANCE", "ADDITIONAL_FIELD1",
-        "ADDITIONAL_FIELD2", "AUTHORIZED_REQUIRED", "API_PASSWORD"
-    ],
-    "Account Validation": [
-        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "PAYMENT_MODE", "BankCode",
-        "AccountNumber", "AccountName", "API_PASSWORD"
-    ],
-    "Get Exchange Rate": [
-        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "TRANSFER_AMOUNT", "PAYMENT_MODE",
-        "CALC_BY","LOCATION_ID","PAYOUT_COUNTRY", "API_PASSWORD"
-    ],
-    "SSF Validation": [
-        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "PAYMENT_MODE", "BankCode",
-        "PSSID", "API_PASSWORD"
-    ],
-    "Wallet Validation": [
-        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "WalletId", "AccountName",
-        "TransferAmount", "API_PASSWORD"
-    ],
-    "Fonepay Validation": [
-        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "PAYMENT_MODE", "BankCode", "MobileNumber", "API_PASSWORD"
-    ],
-    "Ammendment Request": [
-        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "PINNO", "AMENDMENT_FIELD",
-        "AMENDMENT_VALUE", "API_PASSWORD"
-    ],
-    "Authorized Confirmed": [
-        "AGENT_CODE", "USER_ID", "PINNO", "AGENT_SESSION_ID", "API_PASSWORD"
-    ],
-    "Cancel Transaction": [
-        "AGENT_CODE", "USER_ID", "PINNO",  "AGENT_SESSION_ID", "CANCEL_REASON", "API_PASSWORD"
-    ],
-    "Get Current Balance": [
-        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "API_PASSWORD"
-    ],
-    "Query Txn Status": [
-        "AGENT_CODE", "USER_ID", "PINNO",  "AGENT_SESSION_ID", "AGENT_TXNID", "API_PASSWORD"
-    ]
-        };
+  <script>
+    // API fields mapping
+    const apiFields = {
+      "Choose the API": [],
+      "Send Transaction": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "SOURCE_OF_FUND", "SENDER_NAME", "SENDER_ADDRESS",
+        "SENDER_COUNTRY", "SENDER_CONTACT_NO", "SENDER_ID_TYPE", "SENDER_ID_NO",
+        "SENDER_ID_ISSUE_DATE", "SENDER_ID_EXPIRY_DATE", "SENDER_DATE_OF_BIRTH",
+        "SENDER_GENDER", "SENDER_NATIONALITY", "BENEFICIARY_NAME",
+        "BENEFICIARY_ADDRESS", "BENEFICIARY_COUNTRY", "BENEFICIARY_CONTACT_NO",
+        "BENEFICIARY_RELATION", "BENEFICIARY_ID_TYPE", "BENEFICIARY_ID_NO",
+        "BENEFICIARY_ID_ISSUE_DATE", "BENEFICIARY_ID_EXPIRY_DATE",
+        "BENEFICIARY_DATE_OF_BIRTH", "BENEFICIARY_GENDER",
+        "BENEFICIARY_NATIONALITY", "PAYMENT_MODE", "BANK_CODE",
+        "BANK_ACCOUNT_NO", "TRANSFER_AMOUNT", "CURRENCY", "PURPOSE_OF_REMITTANCE",
+        "REMITTANCE_TYPE", "REMARKS"
+      ],
+      "Account Validation": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "BANK_CODE", "BANK_ACCOUNT_NO"
+      ],
+      "Get Exchange Rate": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "SOURCE_COUNTRY", "DESTINATION_COUNTRY", "CURRENCY"
+      ],
+      "SSF Validation": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "SSF_ID", "SSF_NAME"
+      ],
+      "Wallet Validation": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "WALLET_ID"
+      ],
+      "Fonepay Validation": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "MERCHANT_CODE", "CUSTOMER_MOBILE_NO"
+      ],
+      "Ammendment Request": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "TXN_REFERENCE_NO", "NEW_BENEFICIARY_NAME",
+        "NEW_BENEFICIARY_CONTACT_NO", "NEW_BENEFICIARY_ADDRESS"
+      ],
+      "Authorized Confirmed": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "TXN_REFERENCE_NO"
+      ],
+      "Cancel Transaction": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "TXN_REFERENCE_NO", "CANCEL_REASON"
+      ],
+      "Get Current Balance": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID"
+      ],
+      "Query Txn Status": [
+        "AGENT_CODE", "USER_ID", "AGENT_SESSION_ID", "AGENT_TXNID",
+        "LOCATION_ID", "TXN_REFERENCE_NO"
+      ]
+    };
 
-        const apiSelect = document.getElementById("api");
-        const fieldsContainer = document.getElementById("fields-container");
-        const generateBtn = document.getElementById("generateBtn");
-        const resultContainer = document.getElementById("resultContainer");
-        const concatenatedEl = document.getElementById("concatenated");
-        const signatureEl = document.getElementById("signatureText");
+    const apiSelect = document.getElementById("api");
+    const fieldsContainer = document.getElementById("fields");
+    const signatureDiv = document.getElementById("signature");
 
-        apiSelect.addEventListener("change", () => {
-            const api = apiSelect.value;
-            fieldsContainer.innerHTML = "";
-            if(apiFields[api]){
-                apiFields[api].forEach(field => {
-                    const div = document.createElement("div");
-                    div.innerHTML = `<label>${field}</label><input type="text" id="${field}" />`;
-                    fieldsContainer.appendChild(div);
-                });
-            }
+    // ✅ Populate dropdown dynamically
+    for (const api in apiFields) {
+      const option = document.createElement("option");
+      option.value = api;
+      option.textContent = api;
+      apiSelect.appendChild(option);
+    }
+
+    // Generate input fields when API changes
+    apiSelect.addEventListener("change", () => {
+      const selectedAPI = apiSelect.value;
+      const fields = apiFields[selectedAPI];
+      fieldsContainer.innerHTML = "";
+
+      if (fields && fields.length > 0) {
+        fields.forEach(field => {
+          const div = document.createElement("div");
+          div.className = "field";
+          div.innerHTML = `<label>${field}</label><input type="text" id="${field}" placeholder="Enter ${field}">`;
+          fieldsContainer.appendChild(div);
         });
+      }
+    });
 
-        generateBtn.addEventListener("click", async () => {
-            const api = apiSelect.value;
-            if(!api) { alert("Select an API first"); return; }
+    // Dummy SHA-256 generator (replace with backend call)
+    async function generateSignature() {
+      const selectedAPI = apiSelect.value;
+      if (!selectedAPI || selectedAPI === "Choose the API") {
+        alert("Please select an API first!");
+        return;
+      }
 
-            const data = { api };
-            apiFields[api].forEach(field => {
-                data[field] = document.getElementById(field).value;
-            });
+      const fields = apiFields[selectedAPI];
+      let inputString = "";
+      fields.forEach(field => {
+        const value = document.getElementById(field).value || "";
+        inputString += `<${field}>${value}</${field}>`;
+      });
 
-            try {
-                const response = await fetch("https://emt-sha256-signature-generator.onrender.com/generate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                if(result.success){
-                    concatenatedEl.value = result.concatenated;
-                    signatureEl.value = result.signature;
-                    resultContainer.style.display = "block";
-                } else {
-                    alert(result.message);
-                }
-            } catch(err){
-                alert("Error connecting to API: " + err);
-            }
-        });
+      // Hash input string using SHA-256
+      const encoder = new TextEncoder();
+      const data = encoder.encode(inputString);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
-        function copySignature(){
-            signatureEl.select();
-            signatureEl.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(signatureEl.value);
-            alert("Signature copied!");
-        }
-    </script>
+      signatureDiv.innerHTML = `<strong>Generated Signature:</strong><br>${hashHex}`;
+    }
+  </script>
+
 </body>
 </html>
